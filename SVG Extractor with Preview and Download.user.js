@@ -2,8 +2,8 @@
 // @name         带预览和下载功能的 SVG 提取器（GlyphWiki 特别版）
 // @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      1.9
-// @description  提取页面中的所有 SVG，提供预览并选择下载 SVG 或 PNG（PNG 尺寸根据 SVG 长宽比例调整），增加预览区关闭功能，支持外部 SVG 文件，特别处理 GlyphWiki 的 SVG 移除网格和矩形边界
+// @version      2.0
+// @description  提取页面中的所有标准 SVG 和 <symbol> 标签链接的图标 SVG，提供预览并选择下载 SVG 或 PNG（PNG 尺寸根据 SVG 长宽比例调整），增加预览区关闭功能，支持外部 SVG 文件，特别处理 GlyphWiki 的 SVG 移除网格和矩形边界
 // @author       般若
 // @match        *://*/*
 // @grant        none
@@ -27,7 +27,7 @@
     previewContainer.style.boxShadow = '0 0 10px rgba(0, 0, 0, 0.1)';
     previewContainer.style.maxHeight = '80vh';
     previewContainer.style.overflowY = 'auto';
-    document.内容.appendChild(previewContainer);
+    document.body.appendChild(previewContainer);
 
     // 创建关闭按钮
     const closeButton = document.createElement('button');
@@ -57,7 +57,7 @@
     extractButton.style.border = 'none';
     extractButton.style.borderRadius = '5px';
     extractButton.style.cursor = 'pointer';
-    document.内容.appendChild(extractButton);
+    document.body.appendChild(extractButton);
 
     // 创建关闭预览区按钮
     const closePreviewButton = document.createElement('button');
@@ -75,16 +75,16 @@
     closePreviewButton.addEventListener('click', () => {
         previewContainer.style.display = 'none';
     });
-    document.内容.appendChild(closePreviewButton);
+    document.body.appendChild(closePreviewButton);
 
     // 移除 GlyphWiki SVG 的网格和矩形边界
     function removeGlyphWikiBackground(svg) {
-        if (window.位置.hostname === 'glyphwiki.org') {
+        if (window.location.hostname === 'glyphwiki.org') {
             const rects = svg.querySelectorAll('rect.glyph-boundary, rect.glyph-guide');
-            rects.forEach(rect => rect.移除());
+            rects.forEach(rect => rect.remove());
 
             const gridLines = svg.querySelectorAll('g.grid-lines');
-            gridLines.forEach(grid => grid.移除());
+            gridLines.forEach(grid => grid.remove());
 
             // 修改 viewBox 和尺寸
             svg.setAttribute('viewBox', '0 0 200 200');
@@ -100,7 +100,7 @@
             try {
                 const response = await fetch(img.src);
                 const svgText = await response.text();
-                const parser = 新建 DOMParser();
+                const parser = new DOMParser();
                 const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
                 const svgElement = svgDoc.querySelector('svg');
                 if (svgElement) {
@@ -134,6 +134,38 @@
         });
 
         return svgs.concat(dynamicSvgs);
+    }
+
+    // 提取页面中的所有 <symbol> 标签并生成 SVG 文件
+    function extractSymbols() {
+        const symbols = document.querySelectorAll('symbol');
+        const symbolSvgs = [];
+
+        symbols.forEach(symbol => {
+            // 创建一个新的 SVG 元素
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('viewBox', symbol.getAttribute('viewBox'));
+            svg.setAttribute('width', '100');
+            svg.setAttribute('height', '100');
+            svg.style.border = '1px solid #ccc';
+            svg.style.marginBottom = '10px';
+
+            // 将 <symbol> 的内容复制到新的 SVG 中
+            Array.from(symbol.children).forEach(child => {
+                svg.appendChild(child.cloneNode(true));
+            });
+
+            // 将 SVG 转换为字符串
+            const serializer = 新建 XMLSerializer();
+            const svgString = serializer.serializeToString(svg);
+
+            // 创建一个下载链接
+            const blob = 新建 Blob([svgString], { 请键入: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+            symbolSvgs.push({ url, 名字: `${symbol.id}.svg`, element: svg });
+        });
+
+        return symbolSvgs;
     }
 
     // 显示 SVG 预览
@@ -226,8 +258,8 @@
                 canvas.width = svgWidth * 4;
                 canvas.height = svgHeight * 4;
             } else {
-                canvas.width = 500;
-                canvas.height = 500;
+                canvas.width = 2500;
+                canvas.height = 2500;
             }
 
             const ctx = canvas.getContext('2d');
@@ -266,9 +298,11 @@
     extractButton.addEventListener('click', async () => {
         await loadAndInlineExternalSVGs(); // 加载并内联外部 SVG
         const svgs = extractSVGs();
-        if (svgs.length > 0) {
+        const symbolSvgs = extractSymbols();
+        const allSvgs = svgs.concat(symbolSvgs);
+        if (allSvgs.length > 0) {
             previewContainer.style.display = 'block'; // 显示预览区
-            showSVGPreviews(svgs);
+            showSVGPreviews(allSvgs);
         } else {
             previewContainer.innerHTML = '<p>未找到 SVG 元素。</p>';
         }
