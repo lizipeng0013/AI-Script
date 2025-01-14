@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         SVG Extractor with Preview and Download (GlyphWiki Special)
+// @name         带预览和下载功能的 SVG 提取器（GlyphWiki 特别版）
 // @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      1.8
+// @version      1.9
 // @description  提取页面中的所有 SVG，提供预览并选择下载 SVG 或 PNG（PNG 尺寸根据 SVG 长宽比例调整），增加预览区关闭功能，支持外部 SVG 文件，特别处理 GlyphWiki 的 SVG 移除网格和矩形边界
 // @author       般若
 // @match        *://*/*
