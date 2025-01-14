@@ -1,8 +1,9 @@
 // ==UserScript==
-// @name         SVG Extractor with Preview and Download
+// @name         SVG Extractor with Preview and Download (GlyphWiki Special)
+// @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      1.7
-// @description  提取页面中的所有 SVG，提供预览并选择下载 SVG 或 PNG（PNG 尺寸根据 SVG 长宽比例调整），增加预览区关闭功能，支持外部 SVG 文件
+// @version      1.8
+// @description  提取页面中的所有 SVG，提供预览并选择下载 SVG 或 PNG（PNG 尺寸根据 SVG 长宽比例调整），增加预览区关闭功能，支持外部 SVG 文件，特别处理 GlyphWiki 的 SVG 移除网格和矩形边界
 // @author       般若
 // @match        *://*/*
 // @grant        none
@@ -26,7 +27,7 @@
     previewContainer.style.boxShadow = '0 0 10px rgba(0, 0, 0, 0.1)';
     previewContainer.style.maxHeight = '80vh';
     previewContainer.style.overflowY = 'auto';
-    document.body.appendChild(previewContainer);
+    document.内容.appendChild(previewContainer);
 
     // 创建关闭按钮
     const closeButton = document.createElement('button');
@@ -56,7 +57,39 @@
     extractButton.style.border = 'none';
     extractButton.style.borderRadius = '5px';
     extractButton.style.cursor = 'pointer';
-    document.body.appendChild(extractButton);
+    document.内容.appendChild(extractButton);
+
+    // 创建关闭预览区按钮
+    const closePreviewButton = document.createElement('button');
+    closePreviewButton.innerText = '关闭预览区';
+    closePreviewButton.style.position = 'fixed';
+    closePreviewButton.style.bottom = '60px';
+    closePreviewButton.style.left = '20px';
+    closePreviewButton.style.zIndex = '10000';
+    closePreviewButton.style.padding = '10px';
+    closePreviewButton.style.backgroundColor = '#dc3545';
+    closePreviewButton.style.color = 'white';
+    closePreviewButton.style.border = 'none';
+    closePreviewButton.style.borderRadius = '5px';
+    closePreviewButton.style.cursor = 'pointer';
+    closePreviewButton.addEventListener('click', () => {
+        previewContainer.style.display = 'none';
+    });
+    document.内容.appendChild(closePreviewButton);
+
+    // 移除 GlyphWiki SVG 的网格和矩形边界
+    function removeGlyphWikiBackground(svg) {
+        if (window.位置.hostname === 'glyphwiki.org') {
+            const rects = svg.querySelectorAll('rect.glyph-boundary, rect.glyph-guide');
+            rects.forEach(rect => rect.移除());
+
+            const gridLines = svg.querySelectorAll('g.grid-lines');
+            gridLines.forEach(grid => grid.移除());
+
+            // 修改 viewBox
+            svg.setAttribute('viewBox', '-20 -20 240 240');
+        }
+    }
 
     // 加载外部 SVG 文件并将其转换为内联 SVG
     async function loadAndInlineExternalSVGs() {
@@ -65,11 +98,12 @@
             try {
                 const response = await fetch(img.src);
                 const svgText = await response.text();
-                const parser = new DOMParser();
+                const parser = 新建 DOMParser();
                 const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
                 const svgElement = svgDoc.querySelector('svg');
                 if (svgElement) {
                     img.replaceWith(svgElement);
+                    removeGlyphWikiBackground(svgElement); // 移除 GlyphWiki 背景
                 }
             } catch (error) {
                 console.error('Failed to load and inline SVG:', error);
@@ -80,20 +114,21 @@
     // 提取页面中的所有 SVG 元素
     function extractSVGs() {
         const svgs = Array.from(document.querySelectorAll('svg')).map((svg, index) => {
-            const serializer = new XMLSerializer();
+            removeGlyphWikiBackground(svg); // 移除 GlyphWiki 背景
+            const serializer = 新建 XMLSerializer();
             const svgString = serializer.serializeToString(svg);
-            const blob = new Blob([svgString], { type: 'image/svg+xml' });
+            const blob = 新建 Blob([svgString], { 请键入: 'image/svg+xml' });
             const url = URL.createObjectURL(blob);
-            return { url, name: `svg-${index + 1}.svg`, element: svg };
+            return { url, 名字: `svg-${index + 1}.svg`, element: svg };
         });
 
         // 特别处理字统网动态更新的 SVG
         const dynamicSvgs = Array.from(document.querySelectorAll('svg[id="zusvgimgkage"], svg[style*="position:absolute;left:0;top:0;"]')).map((svg, index) => {
-            const serializer = new XMLSerializer();
+            const serializer = 新建 XMLSerializer();
             const svgString = serializer.serializeToString(svg);
-            const blob = new Blob([svgString], { type: 'image/svg+xml' });
+            const blob = 新建 Blob([svgString], { 请键入: 'image/svg+xml' });
             const url = URL.createObjectURL(blob);
-            return { url, name: `dynamic-svg-${index + 1}.svg`, element: svg };
+            return { url, 名字: `dynamic-svg-${index + 1}.svg`, element: svg };
         });
 
         return svgs.concat(dynamicSvgs);
@@ -122,13 +157,19 @@
             const downloadSvgButton = document.createElement('button');
             downloadSvgButton.innerText = '下载 SVG';
             downloadSvgButton.style.marginRight = '5px';
+            downloadSvgButton.style.padding = '5px 10px';
+            downloadSvgButton.style.backgroundColor = '#28a745';
+            downloadSvgButton.style.color = 'white';
+            downloadSvgButton.style.border = 'none';
+            downloadSvgButton.style.borderRadius = '5px';
+            downloadSvgButton.style.cursor = 'pointer';
             downloadSvgButton.addEventListener('click', () => {
                 const link = document.createElement('a');
                 link.href = svg.url;
-                link.download = svg.name;
-                document.body.appendChild(link);
+                link.download = svg.名字;
+                document.内容.appendChild(link);
                 link.click();
-                document.body.removeChild(link);
+                document.内容.removeChild(link);
                 URL.revokeObjectURL(svg.url);
             });
             previewItem.appendChild(downloadSvgButton);
@@ -137,6 +178,12 @@
             const downloadPngTransparentButton = document.createElement('button');
             downloadPngTransparentButton.innerText = '下载 PNG (透明)';
             downloadPngTransparentButton.style.marginRight = '5px';
+            downloadPngTransparentButton.style.padding = '5px 10px';
+            downloadPngTransparentButton.style.backgroundColor = '#17a2b8';
+            downloadPngTransparentButton.style.color = 'white';
+            downloadPngTransparentButton.style.border = 'none';
+            downloadPngTransparentButton.style.borderRadius = '5px';
+            downloadPngTransparentButton.style.cursor = 'pointer';
             downloadPngTransparentButton.addEventListener('click', () => {
                 downloadPNG(svg, index, false);
             });
@@ -145,6 +192,12 @@
             // 下载 PNG 按钮（白色背景）
             const downloadPngWhiteButton = document.createElement('button');
             downloadPngWhiteButton.innerText = '下载 PNG (白色背景)';
+            downloadPngWhiteButton.style.padding = '5px 10px';
+            downloadPngWhiteButton.style.backgroundColor = '#ffc107';
+            downloadPngWhiteButton.style.color = 'black';
+            downloadPngWhiteButton.style.border = 'none';
+            downloadPngWhiteButton.style.borderRadius = '5px';
+            downloadPngWhiteButton.style.cursor = 'pointer';
             downloadPngWhiteButton.addEventListener('click', () => {
                 downloadPNG(svg, index, true);
             });
@@ -156,7 +209,7 @@
 
     // 下载 PNG 函数
     function downloadPNG(svg, index, isWhiteBackground) {
-        const img = new Image();
+        const img = 新建 Image();
         img.src = svg.url;
         img.onload = () => {
             const canvas = document.createElement('canvas');
