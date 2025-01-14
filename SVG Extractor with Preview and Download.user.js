@@ -86,8 +86,10 @@
             const gridLines = svg.querySelectorAll('g.grid-lines');
             gridLines.forEach(grid => grid.移除());
 
-            // 修改 viewBox
-            svg.setAttribute('viewBox', '-20 -20 240 240');
+            // 修改 viewBox 和尺寸
+            svg.setAttribute('viewBox', '0 0 200 200');
+            svg.setAttribute('width', '100%');
+            svg.setAttribute('height', '100%');
         }
     }
 
