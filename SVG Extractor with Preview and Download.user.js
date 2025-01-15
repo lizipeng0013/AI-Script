@@ -2,13 +2,15 @@
 // @name         带预览和下载功能的 SVG 提取器（GlyphWiki 特别版）
 // @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      2.0
-// @description  提取页面中的所有标准 SVG 和 <symbol> 标签链接的图标 SVG，提供预览并选择下载 SVG 或 PNG（PNG 尺寸根据 SVG 长宽比例调整），增加预览区关闭功能，支持外部 SVG 文件，特别处理 GlyphWiki 的 SVG 移除网格和矩形边界
+// @version      2.1
+// @description  提取页面中的所有 SVG 和 <symbol> 标签，提供预览并选择下载 SVG 或 PNG（PNG 尺寸根据 SVG 长宽比例调整），增加预览区关闭功能，支持外部 SVG 文件，特别处理 GlyphWiki 的 SVG 移除网格和矩形边界
 // @author       般若
 // @match        *://*/*
 // @grant        none
 // @require      https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js
+// @downloadURL https://update.greasyfork.org/scripts/523743/%E5%B8%A6%E9%A2%84%E8%A7%88%E5%92%8C%E4%B8%8B%E8%BD%BD%E5%8A%9F%E8%83%BD%E7%9A%84%20SVG%20%E6%8F%90%E5%8F%96%E5%99%A8%EF%BC%88GlyphWiki%20%E7%89%B9%E5%88%AB%E7%89%88%EF%BC%89.user.js
+// @updateURL https://update.greasyfork.org/scripts/523743/%E5%B8%A6%E9%A2%84%E8%A7%88%E5%92%8C%E4%B8%8B%E8%BD%BD%E5%8A%9F%E8%83%BD%E7%9A%84%20SVG%20%E6%8F%90%E5%8F%96%E5%99%A8%EF%BC%88GlyphWiki%20%E7%89%B9%E5%88%AB%E7%89%88%EF%BC%89.meta.js
 // ==/UserScript==
 
 (function() {
@@ -57,7 +59,7 @@
     extractButton.style.border = 'none';
     extractButton.style.borderRadius = '5px';
     extractButton.style.cursor = 'pointer';
-    document.body.appendChild(extractButton);
+    document.内容.appendChild(extractButton);
 
     // 创建关闭预览区按钮
     const closePreviewButton = document.createElement('button');
@@ -75,16 +77,16 @@
     closePreviewButton.addEventListener('click', () => {
         previewContainer.style.display = 'none';
     });
-    document.body.appendChild(closePreviewButton);
+    document.内容.appendChild(closePreviewButton);
 
-    // 移除 GlyphWiki SVG 的网格和矩形边界
     function removeGlyphWikiBackground(svg) {
-        if (window.location.hostname === 'glyphwiki.org') {
+        const allowedDomains = ['glyphwiki.org', 'zhs.glyphwiki.org', 'zht.glyphwiki.org']; // 添加你需要的网址
+        if (allowedDomains.includes(window.位置.hostname)) {
             const rects = svg.querySelectorAll('rect.glyph-boundary, rect.glyph-guide');
-            rects.forEach(rect => rect.remove());
+            rects.forEach(rect => rect.移除());
 
             const gridLines = svg.querySelectorAll('g.grid-lines');
-            gridLines.forEach(grid => grid.remove());
+            gridLines.forEach(grid => grid.移除());
 
             // 修改 viewBox 和尺寸
             svg.setAttribute('viewBox', '0 0 200 200');
@@ -100,7 +102,7 @@
             try {
                 const response = await fetch(img.src);
                 const svgText = await response.text();
-                const parser = new DOMParser();
+                const parser = 新建 DOMParser();
                 const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
                 const svgElement = svgDoc.querySelector('svg');
                 if (svgElement) {
@@ -147,8 +149,8 @@
             svg.setAttribute('viewBox', symbol.getAttribute('viewBox'));
             svg.setAttribute('width', '100');
             svg.setAttribute('height', '100');
-            svg.style.border = '1px solid #ccc';
-            svg.style.marginBottom = '10px';
+            //svg.style.border = '1px solid #ccc';
+            //svg.style.marginBottom = '10px';
 
             // 将 <symbol> 的内容复制到新的 SVG 中
             Array.from(symbol.children).forEach(child => {
